@@ -1,23 +1,65 @@
+name: VPS Auto Renewal
+
 on:
   schedule:
-    - cron: 0 7,15,23 * * *
-  push:
+    - cron: '0 7,15,23 * * *'
   workflow_dispatch:
 
 jobs:
-  job:
+  renew:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-      - run: sudo apt-get -qq update && sudo apt-get -yqq install --no-install-recommends ffmpeg fonts-noto-cjk
-      - run: yarn add puppeteer
-      - run: node main.mjs
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb ffmpeg fonts-noto-cjk
+
+      - name: Install Python dependencies & Camoufox
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          sudo playwright install-deps firefox
+          python -m camoufox fetch
+
+      - name: Run renewal bot
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
           PROXY_SERVER: ${{ secrets.PROXY_SERVER }}
-      - uses: actions/upload-artifact@v4
+          DEBUG: ${{ vars.DEBUG || 'false' }}
+          DISPLAY: :99
+        run: |
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset &
+          sleep 2
+
+          ffmpeg -y -f x11grab -video_size 1280x720 -i :99 \
+            -codec:v libvpx -b:v 1M -r 15 recording.webm > /dev/null 2>&1 &
+          FFMPEG_PID=$!
+
+          python main.py
+          BOT_EXIT_CODE=$?
+
+          kill -2 $FFMPEG_PID
+          wait $FFMPEG_PID || true
+          exit $BOT_EXIT_CODE
+
+      - name: Upload recording
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
+          name: recording-${{ github.run_id }}
           path: recording.webm
+          if-no-files-found: warn
+          retention-days: 7
