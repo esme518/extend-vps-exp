@@ -26,12 +26,24 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             xvfb ffmpeg fonts-noto-cjk
 
-      - name: Install Python dependencies & Camoufox
+      - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           sudo $(which playwright) install-deps firefox
-          python -m camoufox fetch
+          # Write the actual installed camoufox version to a file for cache keying
+          python -c "import importlib.metadata; print(importlib.metadata.version('camoufox'))" > .camoufox-version
+
+      - name: Cache Camoufox browser
+        id: cache-camoufox
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/camoufox
+          key: camoufox-${{ hashFiles('.camoufox-version') }}
+
+      - name: Fetch Camoufox browser
+        if: steps.cache-camoufox.outputs.cache-hit != 'true'
+        run: python -m camoufox fetch
 
       - name: Run renewal bot
         env:
