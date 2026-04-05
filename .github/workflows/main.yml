@@ -31,15 +31,20 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           sudo $(which playwright) install-deps firefox
-          # Write the actual installed camoufox version to a file for cache keying
-          python -c "import importlib.metadata; print(importlib.metadata.version('camoufox'))" > .camoufox-version
+
+      - name: Resolve Camoufox version
+        id: camoufox-meta
+        run: |
+          VERSION=$(pip show camoufox | grep Version: | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Camoufox version: $VERSION"
 
       - name: Cache Camoufox browser
         id: cache-camoufox
         uses: actions/cache@v4
         with:
-          path: ~/.local/share/camoufox
-          key: camoufox-${{ hashFiles('.camoufox-version') }}
+          path: ~/.cache/camoufox
+          key: camoufox-${{ steps.camoufox-meta.outputs.version }}-${{ runner.os }}
 
       - name: Fetch Camoufox browser
         if: steps.cache-camoufox.outputs.cache-hit != 'true'
