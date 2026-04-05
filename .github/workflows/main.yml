@@ -75,13 +75,20 @@ jobs:
           wait $FFMPEG_PID || true
           exit $BOT_EXIT_CODE
 
-      - name: Upload artifacts
+      - name: Encrypt artifacts
+        if: always()
+        run: |
+          7z a \
+            -p"${{ secrets.PASSWORD }}" \
+            -mhe=on \
+            artifacts.7z \
+            recording.webm *.png 2>/dev/null || true
+
+      - name: Upload encrypted artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ github.run_id }}
-          path: |
-            recording.webm
-            *.png
+          path: artifacts.7z
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 3
