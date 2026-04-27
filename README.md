@@ -39,4 +39,32 @@ systemctl status tinyproxy
 ```
 </details>
 
+
+```bash
+# 依赖安装 playwright
+apt update
+apt install -y \
+  libgtk-3-0 \
+  libdbus-glib-1-2 \
+  libxt6 \
+  libx11-xcb1 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxrandr2 \
+  libnss3 \
+  libxss1 \
+  libatk-bridge2.0-0 \
+  libdrm2 \
+  libgbm1 \
+  libxshmfence1
+
+apt install -y libasound2t64
+
+apt install   libasound2  
+
+
+
+
+```
+
 我想去西門町，和大家一起喝珍珠奶茶。
