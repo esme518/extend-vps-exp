@@ -201,7 +201,7 @@ async def main():
     debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
 
     options = {
-        'headless': False,
+        'headless': not debug_mode,
         'humanize': True,
         'geoip': True,
         'os': 'macos',
