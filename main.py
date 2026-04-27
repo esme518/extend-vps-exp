@@ -10,6 +10,7 @@ import aiohttp
 import time
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
+from pathlib import Path
 from urllib.parse import urlparse
 from browserforge.fingerprints import Screen
 from camoufox.async_api import AsyncCamoufox
@@ -17,6 +18,37 @@ from playwright_captcha import CaptchaType, ClickSolver, FrameworkType
 from playwright_captcha.utils.camoufox_add_init_script.add_init_script import get_addon_path
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+ENV_KEYS = (
+    'EMAIL',
+    'PASSWORD',
+    'AUTH_LOGIN_OTP',
+    'PROXY_SERVER',
+    'NOTICE_TG_TOKEN',
+    'NOTICE_TG_USERID',
+    'DEBUG',
+)
+
+
+def load_local_env():
+    missing_keys = [key for key in ENV_KEYS if not os.getenv(key)]
+    if not missing_keys:
+        return
+
+    env_path = Path(__file__).resolve().parent / '.env'
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+
+        key, value = line.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key in missing_keys and value:
+            os.environ[key] = value
 
 
 def generate_totp(secret: str, interval: int = 30, digits: int = 6) -> str:
@@ -156,7 +188,10 @@ async def wait_for_effectively_enabled(locator, timeout_ms: int = 20000, poll_ms
         await asyncio.sleep(poll_ms / 1000)
     return await is_effectively_enabled(locator)
 
+
 async def main():
+    load_local_env()
+
     email = os.getenv('EMAIL', '')
     password = os.getenv('PASSWORD', '')
     auth_login_otp = os.getenv('AUTH_LOGIN_OTP', '')
