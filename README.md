@@ -20,7 +20,11 @@ https://motoki-design.co.jp/wordpress/xserver-vps-auto-renew/
 ```env
 EMAIL=your@gmail.com
 PASSWORD=yourpassword
+AUTH_LOGIN_OTP=your_base32_totp_secret
 PROXY_SERVER=http://user:password@example.com:8888
+NOTICE_TG_TOKEN=telegram_bot_token
+NOTICE_TG_USERID=telegram_chat_id
+DEBUG=true \
 ```
 
 <details><summary>安装代理服务器</summary>

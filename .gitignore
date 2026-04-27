@@ -9,3 +9,8 @@ venv/
 # Artifacts
 *.png
 *.webm
+
+skip_renewal.png
+.venv/
+.python-version 
+install.sh 
