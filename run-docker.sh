@@ -28,14 +28,17 @@ set +e
 docker run --name "$CONTAINER_NAME" \
     -e EMAIL="$EMAIL" \
     -e PASSWORD="$PASSWORD" \
+    -e AUTH_LOGIN_OTP="$AUTH_LOGIN_OTP" \
     -e PROXY_SERVER="$PROXY_SERVER" \
+    -e NOTICE_TG_TOKEN="$NOTICE_TG_TOKEN" \
+    -e NOTICE_TG_USERID="$NOTICE_TG_USERID" \
     -e DEBUG="$DEBUG" \
     "$IMAGE_NAME"
 EXIT_CODE=$?
 set -e
 
 echo "[3/4] Extracting artifacts..."
-ARTIFACTS=("recording.webm" "skip_renewal.png" "before_click.png")
+ARTIFACTS=("recording.webm" "skip_renewal.png" "before_click.png" "after_click.png")
 
 # Clean up old local artifacts
 for f in "${ARTIFACTS[@]}"; do rm -f "./$f"; done
