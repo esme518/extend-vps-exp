@@ -133,6 +133,16 @@ async def extract_server_info(page) -> dict:
     )
 
 
+def normalize_server_info(server_info_raw: dict) -> dict:
+    return {
+        'uuid': server_info_raw.get('UUID', ''),
+        'server_name': server_info_raw.get('サーバー名', ''),
+        'expiry_date_raw': server_info_raw.get('利用期限', '').split('更新する')[0].strip(),
+        'update_date_raw': server_info_raw.get('更新', ''),
+        'service_code': server_info_raw.get('サービスコード', ''),
+    }
+
+
 async def complete_optional_otp(page, otp_secret: str):
     otp_path = '/xapanel/myaccount/twostepauth/index'
 
@@ -256,14 +266,9 @@ async def main():
             logging.info('Waiting for server detail page...')
             await page.wait_for_selector('text="更新する"', timeout=30000)
 
+            detail_url = page.url
             server_info_raw = await extract_server_info(page)
-            server_info = {
-                'uuid': server_info_raw.get('UUID', ''),
-                'server_name': server_info_raw.get('サーバー名', ''),
-                'expiry_date_raw': server_info_raw.get('利用期限', '').split('更新する')[0].strip(),
-                'update_date_raw': server_info_raw.get('更新', ''),
-                'service_code': server_info_raw.get('サービスコード', ''),
-            }
+            server_info = normalize_server_info(server_info_raw)
 
             if not server_info['expiry_date_raw']:
                 raise RuntimeError('Could not find 利用期限 on the server detail page.')
@@ -352,9 +357,7 @@ async def main():
                     raise Exception(err_msg)
             else:
                 if debug_mode:
-                    logging.info('DEBUG MODE: Final button is ENABLED and ready to click. Skipping click to preserve daily limit.')
-                    await button.click(timeout=30000, no_wait_after=True)
-                    logging.info('Final renewal submitted successfully!')
+                    logging.info('DEBUG MODE: Final button is ENABLED. Skipping final click to preserve daily limit.')
                     await send_tg_notice(
                         notice_tg_token,
                         notice_tg_userid,
@@ -363,13 +366,32 @@ async def main():
                 else:
                     logging.info('Executing final renewal submission...')
                     await button.click(timeout=30000, no_wait_after=True)
-                    logging.info('Final renewal submitted successfully!')
+                    await asyncio.sleep(3)
+                    await page.screenshot(path='after_click.png', full_page=True)
+                    logging.info('Captured post-click screenshot after 3 seconds.')
+
+                    logging.info('Refreshing detail page to fetch latest renewal data...')
+                    await page.goto(detail_url, wait_until='domcontentloaded', timeout=60000)
+                    await page.wait_for_selector('table.table', timeout=30000)
+                    latest_server_info = normalize_server_info(await extract_server_info(page))
+
+                    logging.info(
+                        'Latest detail after renewal: service_code=%s expiry=%s last_update=%s',
+                        latest_server_info['service_code'] or '-',
+                        latest_server_info['expiry_date_raw'] or '-',
+                        latest_server_info['update_date_raw'] or '-',
+                    )
                     await send_tg_notice(
                         notice_tg_token,
                         notice_tg_userid,
-                        format_server_info_message('XServer VPS renewal submitted successfully.', server_info, today_jst, should_renew=True),
+                        format_server_info_message(
+                            'XServer VPS renewal submitted successfully.',
+                            latest_server_info,
+                            today_jst,
+                            should_renew=True,
+                        ),
                     )
-                    await asyncio.sleep(10)
+                    logging.info('Final renewal submitted successfully!')
             
             logging.info('Done!')
             if debug_mode:
