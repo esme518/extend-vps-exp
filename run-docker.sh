@@ -28,14 +28,45 @@ set +e
 docker run --name "$CONTAINER_NAME" \
     -e EMAIL="$EMAIL" \
     -e PASSWORD="$PASSWORD" \
+    -e AUTH_LOGIN_OTP="$AUTH_LOGIN_OTP" \
     -e PROXY_SERVER="$PROXY_SERVER" \
+    -e NOTICE_TG_TOKEN="$NOTICE_TG_TOKEN" \
+    -e NOTICE_TG_USERID="$NOTICE_TG_USERID" \
     -e DEBUG="$DEBUG" \
     "$IMAGE_NAME"
 EXIT_CODE=$?
 set -e
 
 echo "[3/4] Extracting artifacts..."
-ARTIFACTS=("recording.webm" "skip_renewal.png" "before_click.png")
+ARTIFACTS=(
+    "recording.webm"
+    "skip_renewal.png"
+    "before_click.png"
+    "after_click.png"
+    "failure.png"
+    "failure.html"
+    "login_entry_timeout.png"
+    "login_entry_timeout.html"
+    "otp_wait_timeout.png"
+    "otp_wait_timeout.html"
+    "otp_fill_failed.png"
+    "otp_fill_failed.html"
+    "otp_submit_failed.png"
+    "otp_submit_failed.html"
+    "dashboard_timeout.png"
+    "dashboard_timeout.html"
+    "renewal_page_timeout.png"
+    "renewal_page_timeout.html"
+    "renewal_selection_timeout.png"
+    "renewal_selection_timeout.html"
+    "final_button_timeout.png"
+    "final_button_timeout.html"
+    "final_button_suspended.png"
+    "final_button_suspended.html"
+    "final_disabled_attempt_1.png"
+    "final_disabled_attempt_2.png"
+    "final_disabled_attempt_3.png"
+)
 
 # Clean up old local artifacts
 for f in "${ARTIFACTS[@]}"; do rm -f "./$f"; done

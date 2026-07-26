@@ -8,4 +8,11 @@ venv/
 
 # Artifacts
 *.png
+*.html
 *.webm
+
+skip_renewal.png
+.venv/
+.python-version 
+install.sh 
+renewal_state.json
